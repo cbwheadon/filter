@@ -1,0 +1,14 @@
+<head>
+  <title>Cross filter for value-added data</title>
+</head>
+
+<body>
+  {{> chart}}
+</body>
+
+<template name="chart">
+  <div class="chart">
+    {{#constant}}
+    {{/constant}}
+  </div>
+</template>

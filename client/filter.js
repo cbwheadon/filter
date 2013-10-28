@@ -1,0 +1,247 @@
+function barChart() {
+  var margin = {top: 20, right: 20, bottom: 20, left: 20},
+      width = 760,
+      height = 120,
+      xValue = function(d) { return d[0]; },
+      yValue = function(d) { return d[1]; },
+      xScale = d3.scale.ordinal(),
+      yScale = d3.scale.linear(),
+      xAxis = d3.svg.axis().scale(xScale).orient("bottom").tickSize(6, 0);
+
+  function chart(selection) {
+    selection.each(function(data) {
+	//console.log(data);
+	if (!barChart.id) barChart.id = 1;
+	id = barChart.id++
+      // Convert data to standard representation greedily;
+      // this is needed for nondeterministic accessors.
+      data = data.map(function(d, i) {
+        return [xValue.call(data, d, i), yValue.call(data, d, i)];
+      });
+
+      // Update the x-scale.
+	doms = [];
+	for(var i=0; i<data.length; i++){
+	    doms.push(data[i][0]);
+	}
+
+      xScale
+ 	.domain(doms)
+//	.rangeBands([0,500]);
+        .rangeRoundBands([0, width - margin.left - margin.right], .1);
+
+      // Update the y-scale.
+      yScale
+          .domain([0, d3.max(data, function(d) { return d[1]; })])
+          .range([height - margin.top - margin.bottom,0]);
+	//console.log(yScale.domain());
+	//console.log(yScale.range());
+
+      // Select the svg element, if it exists.
+      var svg = d3.select(this).selectAll("svg").data([data]);
+
+      // Otherwise, create the skeletal chart.
+      var gEnter = svg.enter().append("svg").append("g");
+	gEnter.append("g").attr("class", "x axis");
+	//gEnter.append("rect").attr("class", "rect");
+	//gEnter.append("g").attr("class", "brush");
+
+      // Update the outer dimensions.
+      svg .attr("width", width)
+          .attr("height", height)
+
+      // Update the inner dimensions.
+      var g = svg.select("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	var brush = d3.svg.brush()
+	    .x(xScale)
+	    .extent([margin.left,width-margin.right])
+	    .on("brushend", brushended);
+
+	var symbol = g.selectAll(".rect")
+	    .data(data)
+	    .enter().append("rect")
+	    .attr("class", "bar")
+	    .attr("width", xScale.rangeBand())
+	    .attr("y", function(d) { return yScale(d[1]); })
+	    .attr("height", function(d) {return height - margin.top - margin.bottom - yScale(d[1])})
+	    .attr("x", function(d) {return xScale(d[0])})
+	    .attr("id", function(d,i) {return "pt_" + id + "_" + i});
+
+	var gBrush = svg.append("g")
+	    .attr("class", "brush")
+	    .call(brush);
+//	    .call(brush.event);
+
+	gBrush.selectAll("rect")
+	    .attr("height", height);
+	
+      // Update the x-axis.
+      g.select(".x.axis")
+          .attr("transform", "translate(0," + yScale.range()[0] + ")")
+          .call(xAxis);
+
+	function nearest(x, rge, bnd, pos){
+	    var mn = rge[rge.length-1];
+	    var pt = rge[0] + margin.left;
+	    for(var i=0;i<rge.length;i++){
+		df = (Math.abs(x-rge[i]));
+		if (df < mn) {
+		    mn = df;
+		    if(pos==0){
+			if(i>0){
+			    pt = rge[i-1] + bnd + margin.left;
+			    } else {
+			    pt = margin.left;
+				}
+		    } else {
+			pt = rge[i] + bnd + margin.left;
+			}
+		};
+		}
+	    //console.log(pt);
+	    return(pt);
+	}
+
+	function brushended(){
+	    if (!d3.event.sourceEvent) return; // only transition after input
+	    var extent0 = brush.extent();
+	    var extent1 = [];
+	    console.log(extent0);
+	    console.log(xScale.range());
+	    var extent1 = [];
+	    extent1[0] = extent0[0]-margin.left-(xScale.rangeBand()/2);
+	    extent1[1] = extent0[1]-margin.left-(xScale.rangeBand()/2);
+            console.log(extent1)
+	    //console.log(margin.left);
+	    //console.log(xScale.rangeBand());
+	    //console.log(xScale(extent0[0]));
+	    //console.log(xScale(extent0[1]));
+	    //extent1 = [x(extent0[0]),x(extent0[1])];
+	    //extent1[0] = nearest(extent0[0]-margin.left,xScale.range(),xScale.rangeBand(),0);
+	    //extent1[1] = nearest(extent0[1]-margin.left,xScale.range(),xScale.rangeBand(),1);
+	    //d3.select(this).call(brush.extent(extent1));
+	    //symbol.classed("selected", function(d) { return extent1[0] <= (d = xScale(d)) && d <= extent1[1]; });
+	}
+	    
+    });
+  }
+
+  chart.margin = function(_) {
+    if (!arguments.length) return margin;
+    margin = _;
+    return chart;
+  };
+
+  chart.width = function(_) {
+    if (!arguments.length) return width;
+    width = _;
+    return chart;
+  };
+
+  chart.height = function(_) {
+    if (!arguments.length) return height;
+    height = _;
+    return chart;
+  };
+
+  chart.x = function(_) {
+    if (!arguments.length) return xValue;
+    xValue = _;
+    return chart;
+  };
+
+  chart.y = function(_) {
+    if (!arguments.length) return yValue;
+    yValue = _;
+    return chart;
+  };
+
+  return chart;
+}
+
+mapData = function(dm){
+    var grp = dm.group()
+	.reduceCount()
+	.all();
+
+    paths = []
+    var n = grp.length;
+    var i = -1;
+    while (++i <n) {
+	paths.push({'ky':grp[i].key,'val':grp[i].value});
+    }
+    return paths;
+}
+
+
+drawBarChart = function(values) {
+    //console.log(values[0]);
+    var dt = crossfilter(values);
+    //Set dimension
+    var dm = dt.dimension(function(d) { return d.mKS; });
+    var paths1 = mapData(dm);
+
+    var dm = dt.dimension(function(d) { return d.difference; });
+    var paths2 = mapData(dm);
+
+    chart1 = barChart()
+	.x(function(d) { return d.ky; })
+	.y(function(d) { return +d.val; })
+	.width(500);
+
+    d3.select("#example1")
+	.datum(paths1)
+	.call(chart1);
+
+    chart2 = barChart()
+	.x(function(d) { return d.ky; })
+	.y(function(d) { return +d.val; })
+	.width(500);
+
+    d3.select("#example2")
+	.datum(paths2)
+	.call(chart2);
+
+}
+
+
+
+Predictions = new Meteor.Collection("predictions");
+Meteor.subscribe("Predictions");
+
+Template.example.events({
+  'click .bar': function (event) {
+      var bar_id = event.currentTarget.id;
+      //console.log(bar_id);
+      //d3.selectAll('#' + bar_id + '.bar').style('fill', 'red');
+  }
+});
+
+Template.example.rendered = function(){
+    var self = this;
+    self.node = self.find("svg");
+    if (!self.handle){
+	self.handle = Deps.autorun(function() {
+	    //console.log("Running");
+	    var centre = Session.get('centre');
+	    var year = Session.get('year');
+	    var ready = Meteor.subscribe("Predictions");
+	    if (ready.ready()){
+		//console.log("ready");
+		var data = Predictions.find({},{limit:10000}).fetch();
+		drawBarChart(data);
+		
+	    };
+	});
+    }
+}
+
+
+Meteor.startup(function () {
+  // code to run on server at startup
+    Meteor.subscribe("Predictions");
+    Session.set("centre","10322");
+    Session.set("year", 2011);
+});
