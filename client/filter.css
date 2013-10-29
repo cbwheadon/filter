@@ -104,7 +104,45 @@ h1, h2 {
 
 aside {
   position: absolute;
-  left: 740px;
+  left: 440px;
   font-size: smaller;
   width: 220px;
+}
+
+#student-list {
+  min-height: 1024px;
+}
+
+#student-list .diff {
+  margin-bottom: .4em;
+}
+
+#student-list .result {
+  line-height: 1.5em;
+  background: #eee;
+  width: 640px;
+  margin-bottom: 1px;
+}
+
+#student-list .predicted {
+  color: #999;
+}
+
+#student-list .result div {
+  display: inline-block;
+  width: 100px;
+}
+
+#student-list div.candidate,
+#student-list div.achieved,
+#student-list div.subject,
+#student-list div.predicted,
+#student-list div.difference {
+  width: 40px;
+  padding-right: 10px;
+  text-align: center;
+}
+
+#student-list .early {
+  color: green;
 }

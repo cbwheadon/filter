@@ -7,6 +7,7 @@ function barChart() {
     id = barChart.id++,
     axis = d3.svg.axis().orient("bottom"),
     yaxis = d3.svg.axis().scale(y).ticks(4).orient("left"),
+    xaxis = true,
     brush = d3.svg.brush(),
     brushDirty,
     dimension,
@@ -53,19 +54,21 @@ function barChart() {
 		    .data(["background", "foreground"])
 		    .enter().append("path")
 		    .attr("class", function(d) { return d + " bar"; })
-		    .datum(group.all());
+		    .datum(group.all())
 
 		g.selectAll(".foreground.bar")
 		    .attr("clip-path", "url(#clip-" + id + ")");
 
-		g.append("g")
-		    .attr("class", "axis")
-		    .attr("transform", "translate(0," + height + ")")
-		    .call(axis);
-
-		g.append("g")
-		    .attr("class", "y axis")
-		    .call(yaxis)
+		if(xaxis){
+		    g.append("g")
+			.attr("class", "axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(axis);
+		} else {
+		    g.append("g")
+			.attr("class", "y axis")
+			.call(yaxis)
+		}
 
 		// Initialize the brush component with pretty resize handles.
 		var gBrush = g.append("g").attr("class", "brush").call(brush);
@@ -209,10 +212,18 @@ function barChart() {
 	return chart;
     };
 
+    chart.xaxis = function(_){
+	if (!arguments.length) return xaxis;
+	xaxis = _;
+	return chart;
+    };
+
     return d3.rebind(chart, brush, "on");
 }
 
 drawBarChart = function(values) {
+
+    var formatNumber = d3.format(",d")
 
     reduceAdd = function(p, v) {
 	++p.count;
@@ -235,6 +246,8 @@ drawBarChart = function(values) {
     }
     //console.log(values[0]);
     var dt = crossfilter(values);
+
+    all = dt.groupAll();
     //Set dimension
     ks2 = dt.dimension(function(d) {return d.mKS;});
     ks2s = ks2.group(function(d) { return d });
@@ -257,11 +270,12 @@ drawBarChart = function(values) {
             .dimension(va)
             .group(vas)
 	    .x(d3.scale.linear()
-	       .domain([-6,6])
+	       .domain([-7,7])
 	       .rangeRound([0,200])),
 	barChart()
             .dimension(centre)
             .group(centreVA)
+	    .xaxis(false)
 	    .x(d3.scale.linear()
 	       .domain([-1,2])
 	       .rangeRound([0,100])),
@@ -271,6 +285,14 @@ drawBarChart = function(values) {
     var chart = d3.selectAll(".chart")
 	.data(charts)
 	.each(function(chart) { chart.on("brush", renderAll).on("brushend", renderAll); });
+
+    // Render the initial lists.
+    var list = d3.selectAll(".list")
+	.data([studentList]);
+
+    // Render the total.
+    d3.selectAll("#total")
+      .text(formatNumber(dt.size()));
 
     renderAll();
 
@@ -282,8 +304,8 @@ drawBarChart = function(values) {
     // Whenever the brush moves, re-rendering everything.
     function renderAll() {
 	chart.each(render);
-	//list.each(render);
-	//d3.select("#active").text(formatNumber(all.value()));
+	list.each(render);
+	d3.select("#active").text(formatNumber(all.value()));
     }
 
 
@@ -296,6 +318,57 @@ drawBarChart = function(values) {
 	charts[i].filter(null);
 	renderAll();
     };
+
+
+    function studentList(div){
+	var studentsByDiff = d3.nest().key(function(d){return d.difference}).entries(va.top(40));
+
+	div.each(function(){
+	    var diff = d3.select(this).selectAll(".diff")
+		.data(studentsByDiff, function(d) {return d.key});
+
+	    diff.enter().append("div")
+	        .attr("class", "diff")
+		.append("div")
+		.attr("class","title")
+		.text(function(d) { return 'Difference: ' + d.values[0].difference});
+
+	    diff.exit().remove();
+	    
+	    var result = diff.order().selectAll(".result")
+		.data(function(d) { return d.values; }, function(d) { return d.index; });
+
+	    var resultEnter = result.enter().append("div")
+		.attr("class", "result");
+
+	    resultEnter.append("div")
+		.attr("class", "candidate")
+		.text(function(d) {return d.candidate});
+
+	    resultEnter.append("div")
+		.attr("class", "subject")
+		.text(function(d) {return d.subject});
+
+	    resultEnter.append("div")
+		.attr("class", "predicted")
+		.text(function(d) { return d.predicted; });
+
+	    resultEnter.append("div")
+		.attr("class", "achieved")
+		.text(function(d) { return d.achieved; });
+
+	    resultEnter.append("div")
+		.attr("class", "difference")
+		.text(function(d) { return d.difference; });
+
+	    result.exit().remove();
+	    
+	    result.order();
+
+
+	});
+	
+    }
 
 }
 
