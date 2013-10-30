@@ -405,10 +405,6 @@ drawBarChart = function(values) {
 		.attr("class", "result");
 
 	    resultEnter.append("div")
-		.attr("class", "centre")
-		.text(function(d) {return d.centre});
-
-	    resultEnter.append("div")
 		.attr("class", "candidate")
 		.text(function(d) {return d.candidate});
 
@@ -459,7 +455,8 @@ Template.example.rendered = function(){
 	    var ready = Meteor.subscribe("Predictions");
 	    if (ready.ready()){
 		//console.log("ready");
-		data = Predictions.find({},{limit:10000}).fetch();
+		data = Predictions.find({},{}).fetch();
+		//data = Predictions.find({},{limit:100}).fetch();
 		//recode ids
 		for (var i=0; i< data.length; i++){
 		    if(data[i].centre==centre){

@@ -86,24 +86,20 @@ h1, h2 {
   stroke: #666;
 }
 
-#hour-chart {
-  width: 260px;
+#ks2-chart {
+  width: 240px;
 }
 
-#delay-chart {
-  width: 230px;
+#va-chart {
+  width: 240px;
 }
 
-#distance-chart {
+#summary {
   width: 420px;
 }
 
-#date-chart {
-  width: 920px;
-}
-
 aside {
-  font-size: smaller;
+
 }
 
 .notation {
@@ -114,19 +110,11 @@ aside {
   min-height: 1024px;
 }
 
-#student-list .diff {
-  margin-bottom: .4em;
-}
-
 #student-list .result {
   line-height: 1.5em;
   background: #eee;
   width: 640px;
   margin-bottom: 1px;
-}
-
-#student-list .predicted {
-  color: #999;
 }
 
 #student-list .result div {
@@ -141,11 +129,35 @@ aside {
 #student-list div.subject,
 #student-list div.predicted,
 #student-list div.difference {
-  width: 40px;
+  width: 80px;
   padding-right: 10px;
   text-align: center;
 }
 
 #student-list .early {
   color: green;
+}
+
+#header-list .result {
+  line-height: 1.5em;
+  background: #eee;
+  width: 640px;
+  margin-bottom: 1px;
+}
+
+#header-list .result div {
+  display: inline-block;
+  width: 100px;
+}
+
+#header-list div.centre,
+#header-list div.ks2,
+#header-list div.candidate,
+#header-list div.achieved,
+#header-list div.subject,
+#header-list div.predicted,
+#header-list div.difference {
+  width: 80px;
+  padding-right: 10px;
+  text-align: center;
 }
