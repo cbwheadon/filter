@@ -106,6 +106,10 @@ aside {
   font-size: smaller;
 }
 
+.notation {
+  font-size: smaller;
+}
+
 #student-list {
   min-height: 1024px;
 }

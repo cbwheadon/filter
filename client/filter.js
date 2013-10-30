@@ -12,6 +12,7 @@ function barChart() {
     brushDirty,
     dimension,
     group,
+    addText = false,
     round;
 
     function chart(div) {
@@ -21,7 +22,7 @@ function barChart() {
 	var yval = group.top(1)[0].value;
 	//Fixed for average
 	if(yval.hasOwnProperty('total')){
-	    y.domain([-8,8]);
+	    y.domain([-3,3]);
 	} else {
 	    y.domain([0, yval]);		    
 	}
@@ -53,8 +54,22 @@ function barChart() {
 		g.selectAll(".bar")
 		    .data(["background", "foreground"])
 		    .enter().append("path")
-		    .attr("class", function(d) { return d + " bar"; })
+		    .attr("class", function(d) {return d + " bar"; })
 		    .datum(group.all())
+
+		if(addText){
+		    //console.log('Add text to this one...')
+		    g.selectAll(".txt")
+			.data(group.all())
+			.enter().append("text")
+			.attr("class", "notation")
+			.text(function(d) {if (d.key==1) {return "You" } else {return "All"}})
+			.attr("dy", ".3em")
+			.attr("dx", 6)
+			.attr("y", 10)
+			.attr("x", function(d) {return x(d.key)-5})
+			.style("text-anchor", "end")
+		}
 
 		g.selectAll(".foreground.bar")
 		    .attr("clip-path", "url(#clip-" + id + ")");
@@ -69,6 +84,7 @@ function barChart() {
 			.attr("class", "y axis")
 			.call(yaxis)
 		}
+
 
 		// Initialize the brush component with pretty resize handles.
 		var gBrush = g.append("g").attr("class", "brush").call(brush);
@@ -107,11 +123,9 @@ function barChart() {
 		    if(d.value.count>0) {
 			vl = d.value.total / d.value.count;
 		    } else { vl = -100 };
-		    if(d.key==0){
-			path.push('M',x(d.key),',',y(vl) ,'m -7.5, 0 a 7.5,7.5 0 1,0 15,0 a 7.5,7.5 0 1,0 -15,0');
-		    } else {
-			path.push('M',x(d.key),',',y(vl)+10, 'H', x(d.key)+20, 'L', x(d.key)+10,',',y(vl) -10, 'Z')
-		    }
+		    path.push('M',x(d.key),',',y(vl) ,'m -2.5, 0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0');
+		    path.push('M',x(d.key)-0.5, ',',y(vl)+20,' H ',x(d.key)+1,' V ',y(vl)-20,' H ',x(d.key)-0.5,' Z');
+		    
 		} else {
 		    path.push("M", x(d.key), ",", height, "V", y(d.value), "h9V", height);
 		}
@@ -182,6 +196,12 @@ function barChart() {
 	return chart;
     };
 
+    chart.addText = function(_){
+	if(!arguments.length) return addText;
+	addText = _;
+	return chart;
+    };
+
     chart.dimension = function(_) {
 	if (!arguments.length) return dimension;
 	dimension = _;
@@ -226,28 +246,36 @@ drawBarChart = function(values) {
     var formatNumber = d3.format(",d")
 
     reduceAdd = function(p, v) {
+	/*
 	console.log('adding');
 	console.log('initial state');
 	console.log(p);
 	console.log('new item');
 	console.log(v);
+	*/
 	++p.count;
 	p.total += v.difference;
+	/*
 	console.log('post adding');
 	console.log(p);
+	*/
 	return p;
     }
 
     reduceRemove = function(p, v) {
+	/*
 	console.log('removing');
 	console.log('initial state');
 	console.log(p);
 	console.log('new item');
 	console.log(v);
+	*/
 	--p.count;
 	p.total -= v.difference;
+	/*
 	console.log('post removing');
 	console.log(p);
+	*/
 	return p;
     }
     
@@ -266,7 +294,7 @@ drawBarChart = function(values) {
     ks2 = dt.dimension(function(d) {return d.mKS;});
     ks2s = ks2.group(function(d) { return d });
 
-    va = dt.dimension(function(d) {return d.difference});
+    va = dt.dimension(function(d) {return +d.difference});
     vas = va.group(function(d) {return d});
 
     centre = dt.dimension(function(d) {return d.centre});
@@ -290,6 +318,7 @@ drawBarChart = function(values) {
             .dimension(centre)
             .group(centreVA)
 	    .xaxis(false)
+	    .addText(true)
 	    .x(d3.scale.linear()
 	       .domain([-1,2])
 	       .rangeRound([0,100])),
@@ -349,7 +378,13 @@ drawBarChart = function(values) {
 
 
     function studentList(div){
-	studentsByDiff = d3.nest().key(function(d){return d.difference}).entries(va.top(40));
+	
+	numberOrder = function(a, b) {
+	    var a = +a;
+	    var b = +b;
+	    return b > a ? -1 : b < a ? 1 : 0;
+	}
+	studentsByDiff = d3.nest().key(function(d){return +d.difference}).sortKeys(numberOrder).entries(centre.filter(1).top(Infinity));
 
 	div.each(function(){
 	    var diff = d3.select(this).selectAll(".diff")
@@ -424,7 +459,7 @@ Template.example.rendered = function(){
 	    var ready = Meteor.subscribe("Predictions");
 	    if (ready.ready()){
 		//console.log("ready");
-		data = Predictions.find({},{limit:100}).fetch();
+		data = Predictions.find({},{limit:10000}).fetch();
 		//recode ids
 		for (var i=0; i< data.length; i++){
 		    if(data[i].centre==centre){
