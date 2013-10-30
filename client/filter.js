@@ -67,7 +67,7 @@ function barChart() {
 			.attr("dy", ".3em")
 			.attr("dx", 6)
 			.attr("y", 10)
-			.attr("x", function(d) {return x(d.key)-5})
+			.attr("x", function(d) {return x(d.key)-10})
 			.style("text-anchor", "end")
 		}
 
@@ -475,6 +475,6 @@ Template.example.rendered = function(){
 Meteor.startup(function () {
   // code to run on server at startup
     Meteor.subscribe("Predictions");
-    Session.set("centre","68643");
+    Session.set("centre","10102");
     Session.set("year", 2011);
 });
