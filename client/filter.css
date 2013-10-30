@@ -103,10 +103,7 @@ h1, h2 {
 }
 
 aside {
-  position: absolute;
-  left: 440px;
   font-size: smaller;
-  width: 220px;
 }
 
 #student-list {
@@ -133,6 +130,8 @@ aside {
   width: 100px;
 }
 
+#student-list div.centre,
+#student-list div.ks2,
 #student-list div.candidate,
 #student-list div.achieved,
 #student-list div.subject,

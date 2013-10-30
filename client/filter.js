@@ -21,7 +21,7 @@ function barChart() {
 	var yval = group.top(1)[0].value;
 	//Fixed for average
 	if(yval.hasOwnProperty('total')){
-	    y.domain([-3,3]);
+	    y.domain([-8,8]);
 	} else {
 	    y.domain([0, yval]);		    
 	}
@@ -106,7 +106,7 @@ function barChart() {
 		if(d.value.hasOwnProperty('count')){
 		    if(d.value.count>0) {
 			vl = d.value.total / d.value.count;
-		    } else { vl = 0 };
+		    } else { vl = -100 };
 		    if(d.key==0){
 			path.push('M',x(d.key),',',y(vl) ,'m -7.5, 0 a 7.5,7.5 0 1,0 15,0 a 7.5,7.5 0 1,0 -15,0');
 		    } else {
@@ -226,14 +226,28 @@ drawBarChart = function(values) {
     var formatNumber = d3.format(",d")
 
     reduceAdd = function(p, v) {
+	console.log('adding');
+	console.log('initial state');
+	console.log(p);
+	console.log('new item');
+	console.log(v);
 	++p.count;
 	p.total += v.difference;
+	console.log('post adding');
+	console.log(p);
 	return p;
     }
 
     reduceRemove = function(p, v) {
+	console.log('removing');
+	console.log('initial state');
+	console.log(p);
+	console.log('new item');
+	console.log(v);
 	--p.count;
-	p.total = -v.difference;
+	p.total -= v.difference;
+	console.log('post removing');
+	console.log(p);
 	return p;
     }
     
@@ -301,11 +315,25 @@ drawBarChart = function(values) {
 	d3.select(this).call(method);
     }
 
+    function va_calc(obj){
+	if(obj.count>0){
+	    return ((obj.total/obj.count).toFixed(2));
+	} else {
+	    return 0
+	}
+    }
+
     // Whenever the brush moves, re-rendering everything.
     function renderAll() {
 	chart.each(render);
 	list.each(render);
 	d3.select("#active").text(formatNumber(all.value()));
+	var vl = centreVA.all()[1].value;
+	d3.select('#va').text(va_calc(vl));
+	d3.select('#vn').text(vl.count);
+	var vl = centreVA.all()[0].value;
+	d3.select('#ava').text(va_calc(vl));
+	d3.select('#avn').text(vl.count);
     }
 
 
@@ -321,7 +349,7 @@ drawBarChart = function(values) {
 
 
     function studentList(div){
-	var studentsByDiff = d3.nest().key(function(d){return d.difference}).entries(va.top(40));
+	studentsByDiff = d3.nest().key(function(d){return d.difference}).entries(va.top(40));
 
 	div.each(function(){
 	    var diff = d3.select(this).selectAll(".diff")
@@ -336,10 +364,14 @@ drawBarChart = function(values) {
 	    diff.exit().remove();
 	    
 	    var result = diff.order().selectAll(".result")
-		.data(function(d) { return d.values; }, function(d) { return d.index; });
+		.data(function(d) {return d.values; });
 
 	    var resultEnter = result.enter().append("div")
 		.attr("class", "result");
+
+	    resultEnter.append("div")
+		.attr("class", "centre")
+		.text(function(d) {return d.centre});
 
 	    resultEnter.append("div")
 		.attr("class", "candidate")
@@ -348,6 +380,10 @@ drawBarChart = function(values) {
 	    resultEnter.append("div")
 		.attr("class", "subject")
 		.text(function(d) {return d.subject});
+
+	    resultEnter.append("div")
+		.attr("class", "ks2")
+		.text(function(d){return d.mKS});
 
 	    resultEnter.append("div")
 		.attr("class", "predicted")
@@ -388,7 +424,7 @@ Template.example.rendered = function(){
 	    var ready = Meteor.subscribe("Predictions");
 	    if (ready.ready()){
 		//console.log("ready");
-		data = Predictions.find({},{limit:10000}).fetch();
+		data = Predictions.find({},{limit:100}).fetch();
 		//recode ids
 		for (var i=0; i< data.length; i++){
 		    if(data[i].centre==centre){
