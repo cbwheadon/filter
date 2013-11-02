@@ -12,11 +12,18 @@ function barChart() {
     brushDirty,
     dimension,
     group,
+    ordinal = false,
     addText = false,
     round;
 
     function chart(div) {
-	var width = x.range()[1],
+	console.log("domain")
+	console.log(x.domain())
+	if(!ordinal){
+	    var width = x.range()[1]
+	} else {
+	    var width = x.rangeExtent()[1]
+	}
         height = y.range()[0];
 
 	var yval = group.top(1)[0].value;
@@ -52,10 +59,10 @@ function barChart() {
 		    .attr("height", height);
 
 		g.selectAll(".bar")
-		    .data(["background", "foreground"])
-		    .enter().append("path")
-		    .attr("class", function(d) {return d + " bar"; })
-		    .datum(group.all())
+			.data(["background", "foreground"])
+			.enter().append("path")
+			.attr("class", function(d) {return d + " bar"; })
+			.datum(group.all())
 
 		if(addText){
 		    //console.log('Add text to this one...')
@@ -85,11 +92,12 @@ function barChart() {
 			.call(yaxis)
 		}
 
-
-		// Initialize the brush component with pretty resize handles.
-		var gBrush = g.append("g").attr("class", "brush").call(brush);
-		gBrush.selectAll("rect").attr("height", height);
-		gBrush.selectAll(".resize").append("path").attr("d", resizePath);
+		if(!ordinal){
+		    // Initialize the brush component with pretty resize handles.
+		    var gBrush = g.append("g").attr("class", "brush").call(brush);
+		    gBrush.selectAll("rect").attr("height", height);
+		    gBrush.selectAll(".resize").append("path").attr("d", resizePath);
+		}
             }
 
             // Only redraw the brush if set externally.
@@ -117,6 +125,7 @@ function barChart() {
             i = -1,
             n = groups.length,
             d;
+	    console.log(groups);
             while (++i < n) {
 		d = groups[i];
 		if(d.value.hasOwnProperty('count')){
@@ -127,7 +136,11 @@ function barChart() {
 		    path.push('M',x(d.key)-0.5, ',',y(vl)+20,' H ',x(d.key)+1,' V ',y(vl)-20,' H ',x(d.key)-0.5,' Z');
 		    
 		} else {
-		    path.push("M", x(d.key), ",", height, "V", y(d.value), "h9V", height);
+		    if(!ordinal){
+			path.push("M", x(d.key), ",", height, "V", y(d.value), "h9V", height);
+		    } else {
+			path.push("M", x(d.key), ",", height, "V", y(d.value), "h" ,x.rangeBand(), "V", height);
+		    }
 		}
             }
             return path.join("");
@@ -238,10 +251,16 @@ function barChart() {
 	return chart;
     };
 
+    chart.ordinal = function(_){
+	if (!arguments.length) return ordinal;
+	ordinal = _;
+	return chart;
+    };
+
     return d3.rebind(chart, brush, "on");
 }
 
-drawBarChart = function(values) {
+drawBarChart = function(values,subjectArray) {
 
     var formatNumber = d3.format(",d")
 
@@ -294,13 +313,17 @@ drawBarChart = function(values) {
     ks2 = dt.dimension(function(d) {return d.mKS;});
     ks2s = ks2.group(function(d) { return d });
 
+    subject = dt.dimension(function(d) {return d.subject});
+    subjects = subject.group(function(d) {return d});
+
     va = dt.dimension(function(d) {return +d.difference});
     vas = va.group(function(d) {return d});
 
     centre = dt.dimension(function(d) {return d.centre});
     centres = centre.group(function(d) {return d});
+    
     centreVA = centres.reduce(reduceAdd,reduceRemove,reduceInitial).order(orderValue);
-
+    console.log("setting domain")
     var charts = [
 	barChart()
             .dimension(ks2)
@@ -322,7 +345,12 @@ drawBarChart = function(values) {
 	    .x(d3.scale.linear()
 	       .domain([-1,2])
 	       .rangeRound([0,100])),
-
+	barChart()
+	    .ordinal(true)
+	    .group(subjects)
+	    .x(d3.scale.ordinal()
+	       .domain(subjectArray)
+	       .rangeBands([0,400],0.25,1))
     ]
     
     var chart = d3.selectAll(".chart")
@@ -458,14 +486,18 @@ Template.example.rendered = function(){
 		data = Predictions.find({},{}).fetch();
 		//data = Predictions.find({},{limit:100}).fetch();
 		//recode ids
+		var subjectCodes = {};
 		for (var i=0; i< data.length; i++){
 		    if(data[i].centre==centre){
 			data[i].centre=1;
+			subjectCodes[data[i].subject] = true;
 		    } else {
 			data[i].centre=0;
 		    }
 		}
-		drawBarChart(data);
+		subjectCodeArray = Object.keys(subjectCodes);
+		console.log(subjectCodeArray);
+		drawBarChart(data,subjectCodeArray);
 	    };
 	});
     }

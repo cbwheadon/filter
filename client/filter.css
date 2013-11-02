@@ -95,7 +95,11 @@ h1, h2 {
 }
 
 #summary {
-  width: 420px;
+  width: 120px;
+}
+
+#subjects {
+    width: 600px;
 }
 
 aside {
